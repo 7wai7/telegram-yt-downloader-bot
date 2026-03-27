@@ -1,7 +1,7 @@
 import { Context, InputFile } from "grammy";
 import fs from "fs";
-import chunk from "./chunk";
-import { MediaType } from "../types";
+import chunk from "./chunk.js";
+import { MediaType } from "../types/index.js";
 
 export async function sendMediaGroup(ctx: Context, path: string, type: MediaType) {
     const files = fs.readdirSync(path);

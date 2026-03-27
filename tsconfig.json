@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
-    "module": "ESNext",
-    "target": "ES2021",
+    "module": "node20",
+    "target": "es2020",
 
     "rootDir": "./src",
     "outDir": "./dist",
@@ -20,7 +20,7 @@
     "skipLibCheck": true,
     "incremental": true,
 
-    "moduleResolution": "bundler",
+    "moduleResolution": "nodenext",
     "types": ["node"]
   }
 }
