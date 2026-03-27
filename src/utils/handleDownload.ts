@@ -1,4 +1,4 @@
-import { DownloadState } from "src/types";
+import { DownloadState } from "../types";
 import runYtDlp from "./runYtDlp";
 import { Context, InputFile } from "grammy";
 import fs from "fs";
