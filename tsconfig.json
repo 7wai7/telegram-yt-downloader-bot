@@ -1,25 +1,26 @@
 {
   "compilerOptions": {
-    "module": "commonjs",
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
+    "module": "ESNext",
     "target": "ES2021",
-    "sourceMap": true,
+
+    "rootDir": "./src",
     "outDir": "./dist",
-    "baseUrl": "./",
-    "incremental": true,
-    "skipLibCheck": true,
-    "strictNullChecks": true,
+
+    "declaration": true,
+    "sourceMap": true,
+
+    "strict": true,
     "noImplicitAny": true,
-    "strictBindCallApply": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
+    "strictNullChecks": true,
+
     "esModuleInterop": true,
     "resolveJsonModule": true,
-    "allowJs": true
-  },
-  "typeRoots": ["./src/config/env.d.ts", "./src/auth/auth.d.ts", "./src/types/hapi_bounce.d.ts"]
+    "allowSyntheticDefaultImports": true,
+
+    "skipLibCheck": true,
+    "incremental": true,
+
+    "moduleResolution": "bundler",
+    "types": ["node"]
+  }
 }
