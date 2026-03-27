@@ -1,9 +1,9 @@
 import { Bot } from "grammy";
-import { environment } from "./config/environment";
+import { environment } from "./config/environment.js";
 import { InlineKeyboard } from "grammy";
 import crypto from "crypto";
-import { DownloadState, MediaType } from "./types";
-import handleDownload from "./utils/handleDownload";
+import { DownloadState, MediaType } from "./types/index.js";
+import handleDownload from "./utils/handleDownload.js";
 
 const bot = new Bot(environment.TG_TOKEN);
 const stateStore = new Map<string, DownloadState>();

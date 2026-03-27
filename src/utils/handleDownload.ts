@@ -1,8 +1,8 @@
-import { DownloadState } from "../types";
-import runYtDlp from "./runYtDlp";
+import { DownloadState } from "../types/index.js";
+import runYtDlp from "./runYtDlp.js";
 import { Context, InputFile } from "grammy";
 import fs from "fs";
-import { sendMediaGroup } from "./sendMedia";
+import { sendMediaGroup } from "./sendMedia.js";
 
 export default async function handleDownload(ctx: Context, state: DownloadState) {
     const path = `tmp/${state.id}/`;
