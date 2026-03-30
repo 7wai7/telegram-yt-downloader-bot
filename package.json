@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "tsx watch src/main.ts",
     "start": "node dist/main.js",
-    "build": "tsc"
+    "build": "tsc",
+    "code-yt-cookies": "node ./tools/codeYTCookies.js"
   },
   "keywords": [],
   "author": "",

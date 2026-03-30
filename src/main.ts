@@ -7,7 +7,13 @@ import { DownloadState, MediaType } from "./types/index.js";
 import handleDownload from "./utils/handleDownload.js";
 
 fs.mkdirSync("./keys", { recursive: true });
-writeFileSync("./keys/cookies.txt", environment.YT_COOKIES);
+
+const decoded = Buffer.from(
+    environment.YT_COOKIES_BASE64,
+    "base64"
+).toString("utf-8");
+
+writeFileSync("./keys/cookies.txt", decoded);
 
 const bot = new Bot(environment.TG_TOKEN);
 const stateStore = new Map<string, DownloadState>();
