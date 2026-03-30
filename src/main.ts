@@ -2,10 +2,11 @@ import { Bot } from "grammy";
 import { environment } from "./config/environment.js";
 import { InlineKeyboard } from "grammy";
 import crypto from "crypto";
-import { writeFileSync } from "fs";
+import fs, { writeFileSync } from "fs";
 import { DownloadState, MediaType } from "./types/index.js";
 import handleDownload from "./utils/handleDownload.js";
 
+fs.mkdirSync("./keys", { recursive: true });
 writeFileSync("./keys/cookies.txt", environment.YT_COOKIES);
 
 const bot = new Bot(environment.TG_TOKEN);
