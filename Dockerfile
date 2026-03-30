@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
     && /venv/bin/pip install yt-dlp \
     && apt-get clean
 
-ENV PATH="/venv/bin:$PATH" /
+ENV PATH="/venv/bin:$PATH" \
     YTDLP_JS_RUNTIME=node
 
 WORKDIR /app
