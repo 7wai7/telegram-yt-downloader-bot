@@ -1,14 +1,14 @@
 import { DownloadState } from "../types/index.js";
 import runYtDlp from "./runYtDlp.js";
 import { Context, InputFile } from "grammy";
-import fs from "fs";
+import { promises as fs } from "fs";
 import { sendMediaGroup } from "./sendMedia.js";
 
 export default async function handleDownload(ctx: Context, state: DownloadState) {
     const path = `tmp/${state.id}/`;
     const chaptersPath = path + "chapters/";
 
-    const baseArgs = ["--no-playlist"];
+    const baseArgs = ["--no-playlist", "--restrict-filenames"];
     const singleDownloadArgs = ["-o", path + "%(title)s.%(ext)s"];
     const splitChaptersArgs = [
         "--split-chapters",
@@ -17,45 +17,59 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
     ];
 
     try {
-        const data = await runYtDlp(["--dump-json", state.url]);
-        const json = JSON.parse(data as any);
+        await fs.mkdir(path + "chapters", { recursive: true });
 
-        if (!json.chapters) {
-            state.splitChapters = false;
-            await ctx.reply("No chapters found, sending full file");
-        }
-
-        fs.mkdirSync(path + "chapters", { recursive: true });
-        
         if (state.type === "audio") {
-            await runYtDlp([
+            const data = await runYtDlp([
                 "-x",
+                "--dump-json", "--no-simulate",
                 "--audio-format", "mp3",
                 ...baseArgs,
                 ...(state.splitChapters ? splitChaptersArgs : singleDownloadArgs),
                 state.url
             ]);
 
+            try {
+                const json = JSON.parse(data);
+                if (!json.chapters) {
+                    state.splitChapters = false;
+                    await ctx.reply("No chapters found, sending full file");
+                }
+            } catch (e) {
+                console.error(e)
+            }
+
             if (state.splitChapters) {
                 await sendMediaGroup(ctx, chaptersPath, "audio");
             } else {
-                const file = fs.readdirSync(path)[0];
-                const filePath = path + file;
+                const files = await fs.readdir(path);
+                const filePath = path + files[0];
                 await ctx.replyWithAudio(new InputFile(filePath));
             }
         } else if (state.type === "video") {
-            await runYtDlp([
+            const data = await runYtDlp([
                 "-f", "mp4",
+                "--dump-json", "--no-simulate",
                 ...baseArgs,
                 ...(state.splitChapters ? splitChaptersArgs : singleDownloadArgs),
                 state.url
             ]);
 
+            try {
+                const json = JSON.parse(data);
+                if (!json.chapters) {
+                    state.splitChapters = false;
+                    await ctx.reply("No chapters found, sending full file");
+                }
+            } catch (e) {
+                console.error(e)
+            }
+
             if (state.splitChapters) {
                 await sendMediaGroup(ctx, chaptersPath, "video");
             } else {
-                const file = fs.readdirSync(path)[0];
-                const filePath = path + file;
+                const files = await fs.readdir(path);
+                const filePath = path + files[0];
                 await ctx.replyWithVideo(new InputFile(filePath));
             }
         } else {
@@ -69,8 +83,8 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
     }
 }
 
-function cleanupTmp(path: string) {
+async function cleanupTmp(path: string) {
     if (path.startsWith("tmp/")) {
-        fs.rmSync(path, { recursive: true, force: true });
+        await fs.rm(path, { recursive: true, force: true });
     }
 }
