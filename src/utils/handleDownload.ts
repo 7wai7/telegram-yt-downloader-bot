@@ -8,7 +8,13 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
     const path = `tmp/${state.id}/`;
     const chaptersPath = path + "chapters/";
 
-    const baseArgs = ["--no-playlist", "--restrict-filenames"];
+    const baseArgs = [
+        "--no-playlist",
+        "--restrict-filenames",
+        "--js-runtimes", "node",
+        "--cookies", "./keys/cookies.txt",
+        "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    ];
     const singleDownloadArgs = ["-o", path + "%(title)s.%(ext)s"];
     const splitChaptersArgs = [
         "--split-chapters",
