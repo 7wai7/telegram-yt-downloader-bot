@@ -26,6 +26,7 @@ if (!fs.existsSync(cookiesPath)) {
 
 const isDev = environment.NODE_ENV === "dev";
 const token = isDev ? environment.TG_TOKEN_DEV : environment.TG_TOKEN;
+const port = environment.PORT;
 const bot = new Bot(token);
 const stateStore = new Map<string, DownloadState>();
 
@@ -99,14 +100,24 @@ bot.on("callback_query:data", async (ctx) => {
     }
 });
 
-const server = http.createServer(
-  webhookCallback(bot, "https")
-);
+const server = http.createServer((req, res) => {
+  if (req.url === "/webhook") {
+    return webhookCallback(bot, "http")(req, res);
+  }
 
-server.listen(environment.PORT, async () => {
-  console.log("Server started");
-
-  await bot.api.setWebhook(
-    `${environment.WEBHOOK_URL}/webhook`
-  );
+  res.statusCode = 200;
+  res.end("OK");
 });
+
+server.listen(
+  {
+    port,
+    host: "0.0.0.0",
+  },
+  () => {
+    console.log(`Server started on port ${port}`);
+
+    bot.api.setWebhook(`${environment.WEBHOOK_URL}/webhook`)
+      .catch(console.error);
+  }
+);
