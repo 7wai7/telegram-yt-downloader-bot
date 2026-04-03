@@ -1,24 +1,37 @@
-import { Bot } from "grammy";
+import { Bot, InlineKeyboard, webhookCallback } from "grammy";
 import { environment } from "./config/environment.js";
-import { InlineKeyboard } from "grammy";
 import crypto from "crypto";
-import fs, { writeFileSync } from "fs";
+import http from "http";
+import fs from "fs";
 import { DownloadState, MediaType } from "./types/index.js";
 import handleDownload from "./utils/handleDownload.js";
+import { ALLOWED_USERS } from "./constants/index.js";
 
-fs.mkdirSync("./keys", { recursive: true });
+const cookiesPath = "./keys/cookies.txt";
 
-const decoded = Buffer.from(
-    environment.YT_COOKIES_BASE64,
-    "base64"
-).toString("utf-8");
+if (!fs.existsSync(cookiesPath)) {
+    if (!environment.YT_COOKIES_BASE64) {
+        throw new Error("YT_COOKIES_BASE64 is missing");
+    }
 
-writeFileSync("./keys/cookies.txt", decoded);
+    fs.mkdirSync("./keys", { recursive: true });
 
-const bot = new Bot(environment.TG_TOKEN);
+    const decoded = Buffer.from(
+        environment.YT_COOKIES_BASE64,
+        "base64"
+    ).toString("utf-8");
+
+    fs.writeFileSync(cookiesPath, decoded);
+}
+
+const isDev = environment.NODE_ENV === "dev";
+const token = isDev ? environment.TG_TOKEN_DEV : environment.TG_TOKEN;
+const bot = new Bot(token);
 const stateStore = new Map<string, DownloadState>();
 
 bot.on("message", async (ctx) => {
+    if (isDev && !ALLOWED_USERS.has(ctx.from.id)) return ctx.reply("Unauthorized");
+
     try {
         const url = ctx.message.text;
 
@@ -70,13 +83,15 @@ bot.on("callback_query:data", async (ctx) => {
 
             state.splitChapters = split === "true";
 
-            await ctx.editMessageText("Processing...");
+            await ctx.editMessageText("Processing...")
 
-            await handleDownload(ctx, state);
-
-            await ctx.deleteMessage();
-
-            stateStore.delete(id);
+            handleDownload(ctx, state)
+                .finally(async () => {
+                    try {
+                        await ctx.deleteMessage();
+                    } catch { }
+                    stateStore.delete(id);
+                })
         }
     } catch (e) {
         console.log(e)
@@ -84,4 +99,14 @@ bot.on("callback_query:data", async (ctx) => {
     }
 });
 
-bot.start();
+const server = http.createServer(
+  webhookCallback(bot, "https")
+);
+
+server.listen(environment.PORT, async () => {
+  console.log("Server started");
+
+  await bot.api.setWebhook(
+    `${environment.WEBHOOK_URL}/webhook`
+  );
+});
