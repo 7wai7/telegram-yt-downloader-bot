@@ -1,6 +1,7 @@
-import { Bot, InlineKeyboard } from "grammy";
+import { Bot, InlineKeyboard, webhookCallback } from "grammy";
 import { environment } from "./config/environment.js";
 import crypto from "crypto";
+import http from "http";
 import fs from "fs";
 import { DownloadState, MediaType } from "./types/index.js";
 import handleDownload from "./utils/handleDownload.js";
@@ -98,4 +99,14 @@ bot.on("callback_query:data", async (ctx) => {
     }
 });
 
-bot.start();
+const server = http.createServer(
+  webhookCallback(bot, "https")
+);
+
+server.listen(environment.PORT, async () => {
+  console.log("Server started");
+
+  await bot.api.setWebhook(
+    `${environment.WEBHOOK_URL}/webhook`
+  );
+});

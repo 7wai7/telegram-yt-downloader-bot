@@ -1,6 +1,7 @@
 import "dotenv/config";
 
 export const environment = {
+    PORT: process.env.PORT ?? 3000,
     NODE_ENV: process.env.NODE_ENV!,
     WEBHOOK_URL: process.env.WEBHOOK_URL!,
     TG_TOKEN: process.env.TG_TOKEN!,
