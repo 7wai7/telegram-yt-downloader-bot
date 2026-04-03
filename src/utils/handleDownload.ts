@@ -11,6 +11,7 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
     const baseArgs = [
         "--no-playlist",
         "--restrict-filenames",
+        "--remote-components", "ejs:github",
         "--js-runtimes", "node",
         "--cookies", "./keys/cookies.txt",
         "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",

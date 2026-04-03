@@ -101,23 +101,29 @@ bot.on("callback_query:data", async (ctx) => {
 });
 
 const server = http.createServer((req, res) => {
-  if (req.url === "/webhook") {
-    return webhookCallback(bot, "http")(req, res);
-  }
+    try {
+        if (req.url === "/webhook") {
+            return webhookCallback(bot, "http")(req, res);
+        }
 
-  res.statusCode = 200;
-  res.end("OK");
+        res.statusCode = 200;
+        res.end("OK");
+    } catch (e) {
+        console.error(e);
+        res.statusCode = 500;
+        res.end();
+    }
 });
 
 server.listen(
-  {
-    port,
-    host: "0.0.0.0",
-  },
-  () => {
-    console.log(`Server started on port ${port}`);
+    {
+        port,
+        host: "0.0.0.0",
+    },
+    () => {
+        console.log(`Server started on port ${port}`);
 
-    bot.api.setWebhook(`${environment.WEBHOOK_URL}/webhook`)
-      .catch(console.error);
-  }
+        bot.api.setWebhook(`${environment.WEBHOOK_URL}/webhook`)
+            .catch(console.error);
+    }
 );
