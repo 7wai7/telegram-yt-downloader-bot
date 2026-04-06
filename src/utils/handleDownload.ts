@@ -10,13 +10,16 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
 
     const baseArgs = [
         "--no-playlist",
-        "--restrict-filenames",
         "--remote-components", "ejs:github",
         "--js-runtimes", "node",
         "--cookies", "./keys/cookies.txt",
         "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
     ];
-    const singleDownloadArgs = ["-o", path + "%(title)s.%(ext)s"];
+    
+    const singleDownloadArgs = [
+        "-o", path + "%(title)s.%(ext)s",
+    ];
+
     const splitChaptersArgs = [
         "--split-chapters",
         "--paths", path,
@@ -24,27 +27,29 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
     ];
 
     try {
+        const data = await runYtDlp(["--dump-json", ...baseArgs, state.url]);
+        const json = JSON.parse(data);
+
+        if (!json.chapters) {
+            state.splitChapters = false;
+            await ctx.reply("No chapters found, sending full file");
+        }
+        
         await fs.mkdir(path + "chapters", { recursive: true });
 
         if (state.type === "audio") {
-            const data = await runYtDlp([
+            await runYtDlp([
                 "-x",
-                "--dump-json", "--no-simulate",
+                "--no-simulate",
                 "--audio-format", "mp3",
+
+                "--add-metadata",
+                "--embed-thumbnail",
+
                 ...baseArgs,
                 ...(state.splitChapters ? splitChaptersArgs : singleDownloadArgs),
                 state.url
             ]);
-
-            try {
-                const json = JSON.parse(data);
-                if (!json.chapters) {
-                    state.splitChapters = false;
-                    await ctx.reply("No chapters found, sending full file");
-                }
-            } catch (e) {
-                console.error(e)
-            }
 
             if (state.splitChapters) {
                 await sendMediaGroup(ctx, chaptersPath, "audio");
@@ -54,23 +59,13 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
                 await ctx.replyWithAudio(new InputFile(filePath));
             }
         } else if (state.type === "video") {
-            const data = await runYtDlp([
+            await runYtDlp([
                 "-f", "mp4",
                 "--dump-json", "--no-simulate",
                 ...baseArgs,
                 ...(state.splitChapters ? splitChaptersArgs : singleDownloadArgs),
                 state.url
             ]);
-
-            try {
-                const json = JSON.parse(data);
-                if (!json.chapters) {
-                    state.splitChapters = false;
-                    await ctx.reply("No chapters found, sending full file");
-                }
-            } catch (e) {
-                console.error(e)
-            }
 
             if (state.splitChapters) {
                 await sendMediaGroup(ctx, chaptersPath, "video");
@@ -86,6 +81,7 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
         cleanupTmp(path);
     } catch (e) {
         cleanupTmp(path);
+        await ctx.reply("Something went wrong");
         throw e;
     }
 }
