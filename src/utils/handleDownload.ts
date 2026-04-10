@@ -13,9 +13,10 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
         "--remote-components", "ejs:github",
         "--js-runtimes", "node",
         "--cookies", "./keys/cookies.txt",
-        "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        "--extractor-args", "youtube:player_client=android",
+        "--user-agent", "com.google.android.youtube/17.31.35",
     ];
-    
+
     const singleDownloadArgs = [
         "-o", path + "%(title)s.%(ext)s",
     ];
@@ -27,14 +28,16 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
     ];
 
     try {
-        const data = await runYtDlp(["--dump-json", ...baseArgs, state.url]);
-        const json = JSON.parse(data);
+        if (state.splitChapters) {
+            const data = await runYtDlp(["--dump-json", ...baseArgs, state.url]);
+            const json = JSON.parse(data);
 
-        if (!json.chapters) {
-            state.splitChapters = false;
-            await ctx.reply("No chapters found, sending full file");
+            if (!json.chapters) {
+                state.splitChapters = false;
+                await ctx.reply("No chapters found, sending full file");
+            }
         }
-        
+
         await fs.mkdir(path + "chapters", { recursive: true });
 
         if (state.type === "audio") {
