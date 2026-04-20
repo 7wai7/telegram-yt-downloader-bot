@@ -57,9 +57,17 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
             if (state.splitChapters) {
                 await sendMediaGroup(ctx, chaptersPath, "audio");
             } else {
-                const files = await fs.readdir(path);
-                const filePath = path + files[0];
-                await ctx.replyWithAudio(new InputFile(filePath));
+                const files = await fs.readdir(path, {
+                    withFileTypes: true
+                });
+
+                const file = files.find(f => f.isFile());
+                if (file) {
+                    const filePath = path + file.name;
+                    await ctx.replyWithAudio(new InputFile(filePath));
+                } else {
+                    throw new Error(`File not found:\nFile path: ${path}`)
+                }
             }
         } else if (state.type === "video") {
             await runYtDlp([
