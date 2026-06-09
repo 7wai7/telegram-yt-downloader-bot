@@ -1,0 +1,36 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "ngrok",
+      "type": "shell",
+      "command": "ngrok",
+      "args": [
+        "http",
+        "--url=uncourageous-marleen-unintensified.ngrok-free.dev",
+        "8000"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build"],
+      "problemMatcher": []
+    },
+    {
+      "label": "start",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "start"],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev-all",
+      "dependsOn": ["build", "start", "ngrok"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    }
+  ]
+}
