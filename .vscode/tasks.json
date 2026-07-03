@@ -4,31 +4,20 @@
     {
       "label": "ngrok",
       "type": "shell",
-      "command": "ngrok",
-      "args": [
-        "http",
-        "--url=uncourageous-marleen-unintensified.ngrok-free.dev",
-        "8000"
-      ],
-      "problemMatcher": []
-    },
-    {
-      "label": "build",
-      "type": "shell",
       "command": "npm",
-      "args": ["run", "build"],
+      "args": ["run", "ngrok"],
       "problemMatcher": []
     },
     {
       "label": "start",
       "type": "shell",
       "command": "npm",
-      "args": ["run", "start"],
+      "args": ["run", "build-start"],
       "problemMatcher": []
     },
     {
       "label": "dev-all",
-      "dependsOn": ["build", "start", "ngrok"],
+      "dependsOn": ["start", "ngrok"],
       "dependsOrder": "parallel",
       "problemMatcher": []
     }
