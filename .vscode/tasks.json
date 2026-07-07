@@ -1,0 +1,25 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "ngrok",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "ngrok"],
+      "problemMatcher": []
+    },
+    {
+      "label": "start",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "build-start"],
+      "problemMatcher": []
+    },
+    {
+      "label": "dev-all",
+      "dependsOn": ["start", "ngrok"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    }
+  ]
+}

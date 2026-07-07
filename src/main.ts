@@ -1,4 +1,4 @@
-import { Bot, InlineKeyboard, webhookCallback } from "grammy";
+import { Bot, webhookCallback } from "grammy";
 import { environment } from "./config/environment.js";
 import crypto from "crypto";
 import http from "http";
@@ -6,6 +6,7 @@ import fs from "fs";
 import { DownloadState, MediaType } from "./types/index.js";
 import handleDownload from "./utils/handleDownload.js";
 import { ALLOWED_USERS } from "./constants/index.js";
+import renderSettingsKeyboard from "./utils/renderSettingsKeyboard.js";
 
 const cookiesPath = "./keys/cookies.txt";
 
@@ -31,52 +32,95 @@ const bot = new Bot(token);
 const stateStore = new Map<string, DownloadState>();
 
 bot.on("message", async (ctx) => {
-    if (isDev && !ALLOWED_USERS.has(ctx.from.id)) return ctx.reply("Unauthorized");
+    if (isDev && !ALLOWED_USERS.has(ctx.from.id)) {
+        return ctx.reply("Unauthorized");
+    }
 
     try {
-        const url = ctx.message.text;
+        const text = ctx.message.text?.trim();
 
-        if (!url?.includes("youtube.com") && !url?.includes("youtu.be")) {
+        const pending = [...stateStore.values()].find(
+            s => s.waitingForTimeRange && s.userId === ctx.from.id
+        );
+
+        if (pending) {
+            if (!text) return ctx.reply("Send time range");
+
+            const match = text.match(
+                /^(\d{1,2}:)?\d{1,2}:\d{2}\s*-\s*(\d{1,2}:)?\d{1,2}:\d{2}$/
+            );
+
+            if (!match) {
+                return ctx.reply("Invalid format. Example: 2:33-50:13");
+            }
+
+            const [start, end] = text.split("-").map(v => v.trim());
+
+            pending.timeRange = { start, end };
+            pending.waitingForTimeRange = false;
+
+            const view = renderSettingsKeyboard(pending);
+
+            await ctx.reply(view.text, {
+                reply_markup: view.keyboard,
+            });
+
+            return;
+        }
+
+        if (!text?.includes("youtube.com") && !text?.includes("youtu.be")) {
             return ctx.reply("Send YouTube URL");
         }
 
         const id = crypto.randomUUID();
 
-        stateStore.set(id, { id, url });
+        const state: DownloadState = {
+            id,
+            url: text,
+            userId: ctx.from.id,
+            type: "audio",
+            splitChapters: false,
+        };
 
-        const keyboard = new InlineKeyboard()
-            .text("🎧 Audio", `type|audio|${id}`)
-            .text("🎥 Video", `type|video|${id}`);
+        stateStore.set(id, state);
 
-        await ctx.reply("Choose format:", { reply_markup: keyboard });
+        const view = renderSettingsKeyboard(state);
+
+        await ctx.reply(view.text, {
+            reply_markup: view.keyboard,
+        });
     } catch (e) {
-        console.log(e)
-        await ctx.reply("Error");
+        console.error(e);
+
+        try {
+            await ctx.reply("Error");
+        } catch { }
     }
 });
 
 bot.on("callback_query:data", async (ctx) => {
     try {
         const parts = ctx.callbackQuery.data.split("|");
-
         const action = parts[0];
 
-        if (action === "type") {
+        if (action === "set_type") {
             const [, type, id] = parts;
 
             const state = stateStore.get(id);
-            if (!state) return ctx.reply("Expired. Try to send url again");
+            if (!state) return ctx.reply("Expired");
 
             state.type = type as MediaType;
 
-            const keyboard = new InlineKeyboard()
-                .text("ON", `split|true|${id}`)
-                .text("OFF", `split|false|${id}`);
+            const view = renderSettingsKeyboard(state);
 
-            await ctx.editMessageText("Split chapters?", {
-                reply_markup: keyboard
+            await ctx.editMessageText(view.text, {
+                reply_markup: view.keyboard,
             });
-        } else if (action === "split") {
+
+            return;
+        }
+
+        if (action === "set_split") {
             const [, split, id] = parts;
 
             const state = stateStore.get(id);
@@ -84,19 +128,74 @@ bot.on("callback_query:data", async (ctx) => {
 
             state.splitChapters = split === "true";
 
-            await ctx.editMessageText("Processing...")
+            const view = renderSettingsKeyboard(state);
 
-            handleDownload(ctx, state)
-                .finally(async () => {
+            await ctx.editMessageText(view.text, {
+                reply_markup: view.keyboard,
+            });
+
+            return;
+        }
+
+        if (action === "set_range") {
+            const [, id] = parts;
+
+            const state = stateStore.get(id);
+            if (!state) return ctx.reply("State expired");
+
+            state.waitingForTimeRange = true;
+
+            await ctx.reply("Send time range. Example: 2:33-50:13");
+
+            return;
+        }
+
+        if (action === "set_range_full") {
+            const [, id] = parts;
+
+            const state = stateStore.get(id);
+            if (!state) return ctx.reply("Expired");
+
+            state.timeRange = undefined;
+            state.waitingForTimeRange = false;
+
+            const view = renderSettingsKeyboard(state);
+
+            await ctx.editMessageText(view.text, {
+                reply_markup: view.keyboard,
+            });
+
+            return;
+        }
+
+        if (action === "download") {
+            const [, id] = parts;
+
+            const state = stateStore.get(id);
+            if (!state) return ctx.reply("Expired");
+
+            await ctx.editMessageText("Processing...");
+
+            void handleDownload(ctx, state)
+                .catch(async (e) => {
+                    console.error(e);
+
                     try {
-                        await ctx.deleteMessage();
+                        await ctx.reply("Failed to download file");
                     } catch { }
-                    stateStore.delete(id);
                 })
+                .finally(async () => {
+                    stateStore.delete(id);
+                });
+
+            return;
         }
     } catch (e) {
-        console.log(e)
-        await ctx.reply("Failed to download file");
+        console.error(e);
+
+        try {
+            await ctx.reply("Failed");
+        } catch { }
     }
 });
 
@@ -127,3 +226,11 @@ server.listen(
             .catch(console.error);
     }
 );
+
+process.on("unhandledRejection", (reason) => {
+    console.error("Unhandled rejection:", reason);
+});
+
+process.on("uncaughtException", (err) => {
+    console.error("Uncaught exception:", err);
+});

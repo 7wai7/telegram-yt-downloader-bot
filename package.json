@@ -7,6 +7,9 @@
     "dev": "tsx watch src/main.ts",
     "start": "node dist/main.js",
     "build": "tsc",
+    "build-start": "tsc && node dist/main.js",
+    "ngrok": "ngrok http --url=uncourageous-marleen-unintensified.ngrok-free.dev 8000",
+    "ngrok:auth": "node tools/ngrokAuth.js",
     "code-yt-cookies": "node ./tools/codeYTCookies.js"
   },
   "keywords": [],
@@ -20,6 +23,7 @@
   "devDependencies": {
     "@types/dotenv": "^6.1.1",
     "@types/node": "^25.5.0",
+    "dotenv-cli": "^11.0.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   }
