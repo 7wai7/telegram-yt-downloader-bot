@@ -27,6 +27,14 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
         "-o", "chapter:chapters/%(section_title)s.%(ext)s",
     ];
 
+    const timeRangeArgs = state.timeRange
+        ? [
+            "--download-sections",
+            `*${state.timeRange.start}-${state.timeRange.end}`,
+            "--force-keyframes-at-cuts",
+        ]
+        : [];
+
     try {
         if (state.splitChapters) {
             const data = await runYtDlp(["--dump-json", ...baseArgs, state.url]);
@@ -50,6 +58,7 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
                 "--embed-thumbnail",
 
                 ...baseArgs,
+                ...timeRangeArgs,
                 ...(state.splitChapters ? splitChaptersArgs : singleDownloadArgs),
                 state.url
             ]);
@@ -72,8 +81,10 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
         } else if (state.type === "video") {
             await runYtDlp([
                 "-f", "mp4",
-                "--dump-json", "--no-simulate",
+                "--dump-json",
+                "--no-simulate",
                 ...baseArgs,
+                ...timeRangeArgs,
                 ...(state.splitChapters ? splitChaptersArgs : singleDownloadArgs),
                 state.url
             ]);
@@ -88,12 +99,11 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
         } else {
             await ctx.reply("Invalid type");
         }
-
-        cleanupTmp(path);
     } catch (e) {
-        cleanupTmp(path);
         await ctx.reply("Something went wrong");
         throw e;
+    } finally {
+        void cleanupTmp(path);
     }
 }
 
