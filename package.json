@@ -8,8 +8,7 @@
     "start": "node dist/main.js",
     "build": "tsc",
     "build-start": "tsc && node dist/main.js",
-    "ngrok": "ngrok http --url=uncourageous-marleen-unintensified.ngrok-free.dev 8000",
-    "ngrok:auth": "node tools/ngrokAuth.js",
+    "ngrok": "node tools/startNgrok.js",
     "code-yt-cookies": "node ./tools/codeYTCookies.js"
   },
   "keywords": [],
