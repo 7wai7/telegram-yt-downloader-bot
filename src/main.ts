@@ -180,7 +180,10 @@ bot.on("callback_query:data", async (ctx) => {
                     console.error(e);
 
                     try {
-                        await ctx.reply("Failed to download file");
+                        let text = "Failed to download file";
+                        if(e.description) text += `\n${e.description}`;
+
+                        await ctx.reply(text);
                     } catch { }
                 })
                 .finally(async () => {
