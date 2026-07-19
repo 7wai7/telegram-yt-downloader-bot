@@ -102,12 +102,19 @@ bot.on("callback_query:data", async (ctx) => {
     try {
         const parts = ctx.callbackQuery.data.split("|");
         const action = parts[0];
+        const id = parts.pop()!;
+
+        const state = stateStore.get(id);
+        if (!state) return ctx.reply("State expired");
+
+        await ctx.answerCallbackQuery();
 
         if (action === "set_type") {
-            const [, type, id] = parts;
+            const [, type] = parts;
 
-            const state = stateStore.get(id);
-            if (!state) return ctx.reply("Expired");
+            if (state.type === type) {
+                return;
+            }
 
             state.type = type as MediaType;
 
@@ -121,12 +128,15 @@ bot.on("callback_query:data", async (ctx) => {
         }
 
         if (action === "set_split") {
-            const [, split, id] = parts;
+            const [, split] = parts;
 
-            const state = stateStore.get(id);
-            if (!state) return ctx.reply("Expired");
+            const nextValue = split === "true";
 
-            state.splitChapters = split === "true";
+            if (state.splitChapters === nextValue) {
+                return;
+            }
+
+            state.splitChapters = nextValue;
 
             const view = renderSettingsKeyboard(state);
 
@@ -138,11 +148,6 @@ bot.on("callback_query:data", async (ctx) => {
         }
 
         if (action === "set_range") {
-            const [, id] = parts;
-
-            const state = stateStore.get(id);
-            if (!state) return ctx.reply("State expired");
-
             state.waitingForTimeRange = true;
 
             await ctx.reply("Send time range. Example: 2:33-50:13");
@@ -151,10 +156,9 @@ bot.on("callback_query:data", async (ctx) => {
         }
 
         if (action === "set_range_full") {
-            const [, id] = parts;
-
-            const state = stateStore.get(id);
-            if (!state) return ctx.reply("Expired");
+            if (!state.timeRange && !state.waitingForTimeRange) {
+                return;
+            }
 
             state.timeRange = undefined;
             state.waitingForTimeRange = false;
@@ -169,11 +173,6 @@ bot.on("callback_query:data", async (ctx) => {
         }
 
         if (action === "download") {
-            const [, id] = parts;
-
-            const state = stateStore.get(id);
-            if (!state) return ctx.reply("Expired");
-
             await ctx.editMessageText("Processing...");
 
             void handleDownload(ctx, state)

@@ -16,7 +16,20 @@
       "problemMatcher": []
     },
     {
+      "label": "dev",
+      "type": "shell",
+      "command": "npm",
+      "args": ["run", "dev"],
+      "problemMatcher": []
+    },
+    {
       "label": "dev-all",
+      "dependsOn": ["dev", "ngrok"],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "start-all",
       "dependsOn": ["start", "ngrok"],
       "dependsOrder": "parallel",
       "problemMatcher": []

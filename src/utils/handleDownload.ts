@@ -3,6 +3,7 @@ import runYtDlp from "./runYtDlp.js";
 import { Context, InputFile } from "grammy";
 import { promises as fs } from "fs";
 import { sendMediaGroup } from "./sendMedia.js";
+import fixAudioChapterMetadata from "./fixAudioChapterMetadata.js";
 
 export default async function handleDownload(ctx: Context, state: DownloadState) {
     const path = `tmp/${state.id}/`;
@@ -25,6 +26,12 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
         "--split-chapters",
         "--paths", path,
         "-o", "chapter:chapters/%(section_title)s.%(ext)s",
+
+        "--parse-metadata",
+        "%(section_title)s:%(meta_title)s",
+
+        "--parse-metadata",
+        "%(section_number)s:%(meta_track)s",
     ];
 
     const timeRangeArgs = state.timeRange
@@ -55,6 +62,7 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
                 "--audio-format", "mp3",
 
                 "--add-metadata",
+                "--no-embed-chapters",
                 "--embed-thumbnail",
 
                 ...baseArgs,
@@ -64,6 +72,7 @@ export default async function handleDownload(ctx: Context, state: DownloadState)
             ]);
 
             if (state.splitChapters) {
+                await fixAudioChapterMetadata(chaptersPath);
                 await sendMediaGroup(ctx, chaptersPath, "audio");
             } else {
                 const files = await fs.readdir(path, {
