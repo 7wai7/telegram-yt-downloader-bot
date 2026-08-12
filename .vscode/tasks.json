@@ -4,22 +4,19 @@
     {
       "label": "ngrok",
       "type": "shell",
-      "command": "npm",
-      "args": ["run", "ngrok"],
+      "command": ". \"$HOME/.nvm/nvm.sh\" && npm run ngrok",
       "problemMatcher": []
     },
     {
       "label": "start",
       "type": "shell",
-      "command": "npm",
-      "args": ["run", "build-start"],
+      "command": ". \"$HOME/.nvm/nvm.sh\" && npm run build-start",
       "problemMatcher": []
     },
     {
       "label": "dev",
       "type": "shell",
-      "command": "npm",
-      "args": ["run", "dev"],
+      "command": ". \"$HOME/.nvm/nvm.sh\" && npm run dev",
       "problemMatcher": []
     },
     {
