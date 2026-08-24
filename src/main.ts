@@ -7,6 +7,7 @@ import { DownloadState, MediaType } from "./types/index.js";
 import handleDownload from "./utils/handleDownload.js";
 import { ALLOWED_USERS } from "./constants/index.js";
 import renderSettingsKeyboard from "./utils/renderSettingsKeyboard.js";
+import { scheduleOldTmpDirsCleanup } from "./utils/cleanupOldTmpDirs.js";
 
 const cookiesPath = "./keys/cookies.txt";
 
@@ -30,6 +31,8 @@ const token = isDev ? environment.TG_TOKEN_DEV : environment.TG_TOKEN;
 const port = environment.PORT;
 const bot = new Bot(token);
 const stateStore = new Map<string, DownloadState>();
+
+scheduleOldTmpDirsCleanup();
 
 bot.on("message", async (ctx) => {
     if (isDev && !ALLOWED_USERS.has(ctx.from.id)) {
